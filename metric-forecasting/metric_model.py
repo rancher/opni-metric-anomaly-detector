@@ -1,4 +1,3 @@
-# from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 # Standard Library
 import logging
 import os
@@ -7,6 +6,8 @@ from abc import abstractmethod
 # Third Party
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(message)s")
@@ -28,8 +29,11 @@ class MetricModel:
 
 
 class ArimaModel(MetricModel):
+    """
+    SARIMAX model: https://www.statsmodels.org/dev/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html
+    """
+
     def __init__(self, order=(1, 1, 1), seasonal_order=(0, 0, 0, 0), alpha=None):
-        ## paramters for SARIMAX
         self.order = order
         self.seasonal_order = seasonal_order
         if alpha:
@@ -51,8 +55,10 @@ class ArimaModel(MetricModel):
         ).fit(disp=False)
 
     def predict(self):
-        fc_series = self.model.forecast(RETRAINING_INTERVAL_MINUTE)
-        intervals = self.model.get_forecast(RETRAINING_INTERVAL_MINUTE).conf_int(
+        fc_series = self.model.forecast(RETRAINING_INTERVAL_MINUTE)  # get yhat
+        intervals = self.model.get_forecast(
+            RETRAINING_INTERVAL_MINUTE
+        ).conf_int(  # get yhat_lower and yhat_upper
             alpha=self.alpha
         )
         lower_series, upper_series = intervals["lower y"], intervals["upper y"]
