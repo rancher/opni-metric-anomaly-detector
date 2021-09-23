@@ -1177,6 +1177,18 @@
                 "value": 90
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_alert"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 123
+              }
+            ]
           }
         ]
       },
@@ -1237,10 +1249,30 @@
               "_id": true,
               "_index": true,
               "_type": true,
+              "alert_score": true,
               "confidence_score": true,
-              "sort": true
+              "sort": true,
+              "y": true,
+              "yhat": true,
+              "yhat_lower": true,
+              "yhat_upper": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "_id": 1,
+              "_index": 2,
+              "_type": 3,
+              "alert_score": 13,
+              "confidence_score": 4,
+              "is_alert": 5,
+              "is_anomaly": 6,
+              "metric_name": 7,
+              "sort": 8,
+              "timestamp": 0,
+              "y": 9,
+              "yhat": 10,
+              "yhat_lower": 11,
+              "yhat_upper": 12
+            },
             "renameByName": {}
           }
         }
@@ -1378,7 +1410,7 @@
           "timeField": "timestamp"
         }
       ],
-      "title": "CPU Usage Anomalies and Alerts",
+      "title": "Memory Usage Anomalies and Alerts",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1405,10 +1437,30 @@
               "_id": true,
               "_index": true,
               "_type": true,
+              "alert_score": true,
               "confidence_score": true,
-              "sort": true
+              "sort": true,
+              "y": true,
+              "yhat": true,
+              "yhat_lower": true,
+              "yhat_upper": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "_id": 1,
+              "_index": 2,
+              "_type": 3,
+              "alert_score": 9,
+              "confidence_score": 4,
+              "is_alert": 5,
+              "is_anomaly": 6,
+              "metric_name": 7,
+              "sort": 8,
+              "timestamp": 0,
+              "y": 10,
+              "yhat": 11,
+              "yhat_lower": 12,
+              "yhat_upper": 13
+            },
             "renameByName": {}
           }
         }
@@ -1546,7 +1598,7 @@
           "timeField": "timestamp"
         }
       ],
-      "title": "CPU Usage Anomalies and Alerts",
+      "title": "Disk Usage Anomalies and Alerts",
       "transformations": [
         {
           "id": "filterByValue",
@@ -1573,10 +1625,30 @@
               "_id": true,
               "_index": true,
               "_type": true,
+              "alert_score": true,
               "confidence_score": true,
-              "sort": true
+              "sort": true,
+              "y": true,
+              "yhat": true,
+              "yhat_lower": true,
+              "yhat_upper": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "_id": 1,
+              "_index": 2,
+              "_type": 3,
+              "alert_score": 9,
+              "confidence_score": 4,
+              "is_alert": 5,
+              "is_anomaly": 6,
+              "metric_name": 7,
+              "sort": 8,
+              "timestamp": 0,
+              "y": 10,
+              "yhat": 11,
+              "yhat_lower": 12,
+              "yhat_upper": 13
+            },
             "renameByName": {}
           }
         }
@@ -1592,12 +1664,12 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "mytest",
+  "title": "MetricAnomaly",
   "uid": "8iPQXA4nk",
-  "version": 19
+  "version": 26
 }
