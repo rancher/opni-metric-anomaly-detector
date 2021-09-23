@@ -30,12 +30,13 @@ Basic auth: enable
 Skip TLS Verify: enable
 Basic Auth Details:
     User: admin
-    Password: prom-operator
+    Password: admin
 Index name: mymetrics
 Time field name: timestamp
 Version: 7.0+
 ```
 then clike `Save & Test`.
+Expected resonse: `Index OK. Time field name OK.`
 3. [Import dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard) and upload the json file `grafana-dashboard.json` in this repo.
 A dashboard named `MetricAnomaly` should be displayed then.
 

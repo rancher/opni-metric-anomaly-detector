@@ -1664,12 +1664,12 @@
     "list": []
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "MetricAnomaly",
   "uid": "8iPQXA4nk",
-  "version": 26
+  "version": 2
 }
