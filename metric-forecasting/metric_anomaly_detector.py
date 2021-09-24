@@ -14,6 +14,7 @@ ROLLING_TRAINING_SIZE = 1440
 MIN_TRAIN_SIZE = 10
 ALERT_THRESHOLD = 5
 CPD_TRACE_BACK_TIME = 30  ## minutes
+LOOP_TIME_SECOND = 60.0  # unit: second, type: float
 
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(message)s")
@@ -66,7 +67,9 @@ class MetricAnomalyDetector:
     def run(self, data):
         self.train_and_predict()
         xs_raw, y_raw = data[0]["value"]
-        xs_raw = int(xs_raw) // 60 * 60  ## convert time to start of minute :00
+        xs_raw = (
+            int(xs_raw) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
+        )  ## convert time to start of minute :00
         xs_new = datetime.fromtimestamp(
             float(xs_raw)
         ).isoformat()  # example format : '2019-03-13T12:02:49'

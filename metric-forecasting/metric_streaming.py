@@ -21,7 +21,8 @@ logger = logging.getLogger(__file__)
 logger.setLevel(LOGGING_LEVEL)
 
 prom = PrometheusConnect(url=PROMETHEUS_ENDPOINT, disable_ssl=True)
-LOOP_TIME_SECOND = float(60.0)  # unit: second, type: float
+LOOP_TIME_SECOND = 60.0  # unit: second, type: float
+ROLLING_TRAINING_SIZE = 1440
 
 ES_ENDPOINT = os.getenv("ES_ENDPOINT", "https://localhost:9200")
 ES_USERNAME = os.getenv("ES_USERNAME", "admin")
@@ -81,7 +82,9 @@ async def load_history_data(metric_name, mad: MetricAnomalyDetector):
         "sort": [{"timestamp": {"order": "desc"}}],
     }
     try:
-        history_data = await es.search(index="mymetrics", body=query, size=1440)
+        history_data = await es.search(
+            index="mymetrics", body=query, size=ROLLING_TRAINING_SIZE
+        )
         mad.load(reversed(history_data["hits"]["hits"]))
     except Exception as e:
         logger.warning("fail to load history metrics data!")
@@ -122,7 +125,11 @@ def convert_time(ts):
 
 async def scrape_prometheus_metrics(inference_queue):
     starttime = time.time()
-    wait_time = int(starttime) // 60 * 60 + 60 - starttime
+    wait_time = (
+        int(starttime) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
+        + LOOP_TIME_SECOND
+        - starttime
+    )
     await asyncio.sleep(wait_time)  # wait to the start of next minute
     starttime = time.time()
     logger.debug(f"wait time : {wait_time}, current time : {convert_time(starttime)}")
@@ -144,7 +151,7 @@ async def scrape_prometheus_metrics(inference_queue):
             "disk_usage": disk_usage,
         }
         await inference_queue.put(inference_queue_payload)
-        await asyncio.sleep(  # to make sure it scrapes every 60 seconds.
+        await asyncio.sleep(  # to make sure it scrapes every LOOP_TIME seconds.
             LOOP_TIME_SECOND - ((time.time() - starttime) % LOOP_TIME_SECOND)
         )
 
