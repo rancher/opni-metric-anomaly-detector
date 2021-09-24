@@ -57,7 +57,7 @@ class MetricAnomalyDetector:
     def load(self, history_data):
         for h in history_data:
             d = h["_source"]
-            self.metric_xs.append(d["timestamp"])
+            self.metric_xs.append(datetime.fromisoformat(d["timestamp"]))
             self.metric_y.append(d["y"])
             self.metric_rawy.append(d["y"])
             self.pred_history.append((d["yhat"], d["yhat_lower"], d["yhat_upper"]))
@@ -70,15 +70,13 @@ class MetricAnomalyDetector:
         xs_raw = (
             int(xs_raw) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
         )  ## convert time to start of minute :00
-        xs_new = datetime.fromtimestamp(
-            float(xs_raw)
-        ).isoformat()  # example format : '2019-03-13T12:02:49'
+        xs_new = datetime.fromtimestamp(float(xs_raw))
         y_new = float(y_raw)
 
         is_anomaly = 0
         is_alert = 0
         json_payload = {
-            "timestamp": xs_new,
+            "timestamp": xs_new.isoformat(),
             "is_anomaly": is_anomaly,
             "metric_name": self.metric_name,
             "alert_score": 0,
@@ -98,7 +96,9 @@ class MetricAnomalyDetector:
 
             is_alert = self.update_alert_score(is_anomaly)
             if is_alert == 1:
-                logger.warning(f"Alert for {self.metric_name} at time : {xs_new}")
+                logger.warning(
+                    f"Alert for {self.metric_name} at time : {xs_new.isoformat()}"
+                )
 
             json_payload["yhat"] = y_pred
             json_payload["yhat_lower"] = max(0, y_pred_low)
@@ -188,11 +188,10 @@ class MetricAnomalyDetector:
         every time there's a new data point, train a new model and forecast one step in future.
         """
         if len(self.metric_xs) >= MIN_TRAIN_SIZE:
-            # training_dataseries = pd.Series(self.metric_y, self.metric_xs).asfreq(
-            #     freq="T"
-            # )
-            training_dataseries = pd.Series(self.metric_y, self.metric_xs)
-
+            training_dataseries = pd.Series(self.metric_y, self.metric_xs).asfreq(
+                freq="T"
+            )
+            # training_dataseries = pd.Series(self.metric_y, self.metric_xs)
             ## max training size should be [ROLLING_TRAINING_SIZE]
             if len(self.metric_y) - self.start_index > ROLLING_TRAINING_SIZE:
                 self.start_index = len(self.metric_y) - ROLLING_TRAINING_SIZE
