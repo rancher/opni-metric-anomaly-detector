@@ -1,4 +1,4 @@
-# Opni-metric-anomaly-detector
+# Opni Metrics Service
 
 ## Installation
 #### Prerequisites:
@@ -7,11 +7,11 @@ Rancher user can install Prometheus and Grafana by [enable Rancher monitoring](h
 
 
 #### Build and Run
-To build the metric-anomaly-detection Docker image and then push the image:
+To build the Docker image and then push the image:
 ```
-docker build -t opni-metric-anomaly-detector ./
-docker tag opni-metric-anomaly-detector [ACCOUNT_NAME]/opni-metric-anomaly-detector
-docker push [ACCOUNT_NAME]/opni-metric-anomaly-detector
+docker build -t opni-metrics-service ./
+docker tag opni-metrics-service [ACCOUNT_NAME]/opni-metrics-service
+docker push [ACCOUNT_NAME]/opni-metrics-service
 
 ```
 

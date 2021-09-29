@@ -6,7 +6,7 @@ endif
 
 ORG ?= rancher
 TAG ?= v0
-REPO=opni-metric-anomaly-detector
+REPO=opni-metrics-service
 
 ifneq ($(DRONE_TAG),)
 TAG := $(DRONE_TAG)

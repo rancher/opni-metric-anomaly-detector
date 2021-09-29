@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metric-service
+  name: opni-metrics-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metric-service
+      app: opni-metrics-service
   template:
     metadata:
       labels:
-        app: metric-service
+        app: opni-metrics-service
     spec:
       containers:
-      - name: metric-service
-        image: tybalex/opni-metric:dev1
+      - name: opni-metrics-service
+        image: tybalex/opni-metrics-service:dev
         imagePullPolicy: Always
         env:
         - name: PROMETHEUS_ENDPOINT
