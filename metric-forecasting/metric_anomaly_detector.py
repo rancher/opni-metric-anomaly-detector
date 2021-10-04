@@ -52,6 +52,7 @@ class MetricAnomalyDetector:
         self.metric_model = ArimaModel()
         self.anomaly_history = []
         self.start_index = 0
+        self.anomaly_start_time = None
         # start index of training data. update by CPD and rolling time-window. For example if there's 2000 data points in the list, start_index should be 560.
 
     def load(self, history_data):
@@ -75,6 +76,7 @@ class MetricAnomalyDetector:
 
         is_anomaly = 0
         is_alert = 0
+        alert_len = None
         json_payload = {
             "timestamp": xs_new.isoformat(),
             "is_anomaly": is_anomaly,
@@ -86,15 +88,35 @@ class MetricAnomalyDetector:
             "yhat_lower": y_new,
             "yhat_upper": y_new,
             "confidence_score": 0,
+            "alert_id": self.anomaly_start_time,
+            "alert_len": alert_len,
         }
         if len(self.metric_xs) >= MIN_TRAIN_SIZE:
             y_pred, y_pred_low, y_pred_high = self.pred_history[len(self.metric_xs)]
             if self.metric_name == "disk_usage":
                 is_anomaly = 1 if y_new >= 80 else 0
+                y_pred_high = 80
             else:
                 is_anomaly = 1 if (y_new < y_pred_low or y_new > y_pred_high) else 0
 
-            is_alert = self.update_alert_score(is_anomaly)
+            # is_alert = self.update_alert_score(is_anomaly)
+
+            if is_anomaly == 1:
+                if self.alert_score_counter == 0:
+                    self.anomaly_start_time = xs_raw
+                self.alert_score_counter += 1
+            else:
+                if self.alert_score_counter > 0:
+                    self.alert_score_counter -= 2
+                    if self.alert_score_counter <= 0:
+                        self.anomaly_start_time = None
+                        self.alert_score_counter = 0
+            if self.anomaly_start_time:
+                alert_len = f"{(xs_raw - self.anomaly_start_time) // 60} minutes"
+
+            if self.alert_score_counter >= ALERT_THRESHOLD:
+                is_alert = 1
+
             if is_alert == 1:
                 logger.warning(
                     f"Alert for {self.metric_name} at time : {xs_new.isoformat()}"
@@ -107,6 +129,8 @@ class MetricAnomalyDetector:
             json_payload["is_anomaly"] = is_anomaly
             json_payload["is_alert"] = is_alert
             json_payload["alert_score"] = self.alert_score_counter
+            json_payload["alert_id"] = self.anomaly_start_time
+            json_payload["alert_len"] = alert_len
 
         else:  ## for first 10 mins, simply use y as pred values
             self.pred_history.append((y_new, y_new, y_new))
@@ -151,12 +175,17 @@ class MetricAnomalyDetector:
             To emsemble them, we can either take the intersect or the union.
         """
         if is_anomaly == 1:
+            if self.alert_score_counter == 0:
+                self.anomaly_start_time = xs_raw
             self.alert_score_counter += 1
         else:
             if self.alert_score_counter > 0:
                 self.alert_score_counter -= 2
+                if self.alert_score_counter <= 0:
+                    alert_len = (xs_raw - self.anomaly_start_time) // 60
+                    self.anomaly_start_time = None
+                    self.alert_score_counter = 0
 
-        self.alert_score_counter = max(self.alert_score_counter, 0)
         if self.alert_score_counter >= ALERT_THRESHOLD:
             return 1
         return 0
