@@ -9,10 +9,11 @@ import pandas as pd
 import ruptures as rpt
 from metric_model import ArimaModel
 
+## configurable parameters
 RETRAINING_INTERVAL_MINUTE = 1
 ROLLING_TRAINING_SIZE = 1440
-MIN_TRAIN_SIZE = 10
-ALERT_THRESHOLD = 5
+MIN_TRAINING_SIZE = 10
+ALERT_SCORE_THRESHOLD = 5
 CPD_TRACE_BACK_TIME = 30  ## minutes
 LOOP_TIME_SECOND = 60.0  # unit: second, type: float
 
@@ -84,22 +85,23 @@ class MetricAnomalyDetector:
             "alert_score": 0,
             "is_alert": is_alert,
             "y": y_new,
-            "yhat": y_new,
-            "yhat_lower": y_new,
-            "yhat_upper": y_new,
+            "yhat": None,
+            "yhat_lower": None,
+            "yhat_upper": None,
             "confidence_score": 0,
             "alert_id": self.anomaly_start_time,
             "alert_len": alert_len,
         }
-        if len(self.metric_xs) >= MIN_TRAIN_SIZE:
+        if len(self.metric_xs) >= MIN_TRAINING_SIZE:
             y_pred, y_pred_low, y_pred_high = self.pred_history[len(self.metric_xs)]
             if self.metric_name == "disk_usage":
-                is_anomaly = 1 if y_new >= 80 else 0
+                y_pred = None
                 y_pred_high = 80
+                is_anomaly = 1 if y_new >= y_pred_high else 0  # trigger: above boundary
             else:
-                is_anomaly = 1 if (y_new < y_pred_low or y_new > y_pred_high) else 0
-
-            # is_alert = self.update_alert_score(is_anomaly)
+                is_anomaly = (
+                    1 if (y_new < y_pred_low or y_new > y_pred_high) else 0
+                )  # trigger: above or below
 
             if is_anomaly == 1:
                 if self.alert_score_counter == 0:
@@ -112,9 +114,9 @@ class MetricAnomalyDetector:
                         self.anomaly_start_time = None
                         self.alert_score_counter = 0
             if self.anomaly_start_time:
-                alert_len = f"{(xs_raw - self.anomaly_start_time) // 60} minutes"
+                alert_len = f"{int((xs_raw - self.anomaly_start_time) // 60)} minutes"
 
-            if self.alert_score_counter >= ALERT_THRESHOLD:
+            if self.alert_score_counter >= ALERT_SCORE_THRESHOLD:
                 is_alert = 1
 
             if is_alert == 1:
@@ -133,7 +135,7 @@ class MetricAnomalyDetector:
             json_payload["alert_len"] = alert_len
 
         else:  ## for first 10 mins, simply use y as pred values
-            self.pred_history.append((y_new, y_new, y_new))
+            self.pred_history.append((None, None, None))
 
         if self.metric_name == "cpu_usage" and is_alert == 0 and is_anomaly == 1:
             logger.debug("Experimental: correct anomaly value.")
@@ -186,7 +188,7 @@ class MetricAnomalyDetector:
                     self.anomaly_start_time = None
                     self.alert_score_counter = 0
 
-        if self.alert_score_counter >= ALERT_THRESHOLD:
+        if self.alert_score_counter >= ALERT_SCORE_THRESHOLD:
             return 1
         return 0
 
@@ -216,7 +218,7 @@ class MetricAnomalyDetector:
         modeling includes train and predict.
         every time there's a new data point, train a new model and forecast one step in future.
         """
-        if len(self.metric_xs) >= MIN_TRAIN_SIZE:
+        if len(self.metric_xs) >= MIN_TRAINING_SIZE:
             training_dataseries = pd.Series(self.metric_y, self.metric_xs).asfreq(
                 freq="T"
             )

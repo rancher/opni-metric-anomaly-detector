@@ -770,7 +770,7 @@
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 0,
         "y": 7
@@ -975,7 +975,7 @@
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 8,
         "y": 7
@@ -1159,7 +1159,7 @@
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 16,
         "y": 7
@@ -1346,7 +1346,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 165
+                "value": 157
               }
             ]
           },
@@ -1358,7 +1358,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 119
+                "value": 106
               }
             ]
           },
@@ -1370,7 +1370,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 94
+                "value": 98
               }
             ]
           },
@@ -1382,7 +1382,31 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 113
+                "value": 131
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 82
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 79
               }
             ]
           }
@@ -1392,7 +1416,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "id": 8,
       "options": {
@@ -1445,36 +1469,39 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
-              "confidence_score": false,
+              "alert_score": false,
+              "confidence_score": true,
               "is_anomaly": true,
               "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
-              "_index": 2,
-              "_type": 3,
-              "alert_id": 4,
-              "alert_len": 5,
-              "alert_score": 15,
-              "confidence_score": 6,
-              "is_alert": 7,
-              "is_anomaly": 8,
-              "metric_name": 9,
-              "sort": 10,
+              "_index": 6,
+              "_type": 7,
+              "alert_id": 2,
+              "alert_len": 9,
+              "alert_score": 8,
+              "confidence_score": 10,
+              "is_alert": 5,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 11,
-              "yhat": 12,
-              "yhat_lower": 13,
-              "yhat_upper": 14
+              "y": 3,
+              "yhat": 4,
+              "yhat_lower": 14,
+              "yhat_upper": 15
             },
             "renameByName": {
-              "timestamp": "time"
+              "confidence_score": "",
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
             }
           }
         }
@@ -1627,6 +1654,30 @@
                 "value": 81
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 65
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 71
+              }
+            ]
           }
         ]
       },
@@ -1634,7 +1685,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 16
+        "y": 17
       },
       "id": 9,
       "options": {
@@ -1687,36 +1738,38 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
-              "confidence_score": false,
+              "alert_score": false,
+              "confidence_score": true,
               "is_anomaly": true,
               "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
-              "_index": 2,
-              "_type": 3,
-              "alert_id": 4,
-              "alert_len": 5,
-              "alert_score": 11,
-              "confidence_score": 6,
+              "_index": 5,
+              "_type": 6,
+              "alert_id": 2,
+              "alert_len": 9,
+              "alert_score": 8,
+              "confidence_score": 10,
               "is_alert": 7,
-              "is_anomaly": 8,
-              "metric_name": 9,
-              "sort": 10,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 12,
-              "yhat": 13,
+              "y": 3,
+              "yhat": 4,
               "yhat_lower": 14,
               "yhat_upper": 15
             },
             "renameByName": {
-              "timestamp": "time"
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
             }
           }
         }
@@ -1830,7 +1883,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 93
+                "value": 87
               }
             ]
           },
@@ -1869,6 +1922,30 @@
                 "value": 70
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 82
+              }
+            ]
           }
         ]
       },
@@ -1876,7 +1953,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 16
+        "y": 17
       },
       "id": 10,
       "options": {
@@ -1929,36 +2006,38 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
-              "confidence_score": false,
+              "alert_score": false,
+              "confidence_score": true,
               "is_anomaly": true,
               "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
               "_index": 2,
-              "_type": 5,
+              "_type": 6,
               "alert_id": 3,
-              "alert_len": 4,
-              "alert_score": 11,
-              "confidence_score": 6,
+              "alert_len": 10,
+              "alert_score": 8,
+              "confidence_score": 9,
               "is_alert": 7,
-              "is_anomaly": 8,
-              "metric_name": 9,
-              "sort": 10,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 12,
-              "yhat": 13,
+              "y": 4,
+              "yhat": 5,
               "yhat_lower": 14,
               "yhat_upper": 15
             },
             "renameByName": {
-              "timestamp": "time"
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
             }
           }
         }
@@ -1974,12 +2053,12 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "MetricAnomaly",
   "uid": "8iPQXA4nk",
-  "version": 38
+  "version": 42
 }
