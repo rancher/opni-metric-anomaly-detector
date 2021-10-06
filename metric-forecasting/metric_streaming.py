@@ -104,7 +104,8 @@ async def update_metrics(inference_queue):
             if len(new_data[metric_name]) == 0:
                 continue
             json_payload = mad_dict[metric_name].run(new_data[metric_name])  # run MAD
-            metrics_payloads.append(json_payload)
+            if json_payload:
+                metrics_payloads.append(json_payload)
 
         # send data to ES
         try:
@@ -113,10 +114,10 @@ async def update_metrics(inference_queue):
             ):
                 action, result = result.popitem()
                 if not ok:
-                    logging.error("failed to {} document {}".format())
+                    logger.error("failed to {} document {}".format())
         except (BulkIndexError, ConnectionTimeout) as exception:
-            logging.error("Failed to index data")
-            logging.error(exception)
+            logger.error("Failed to index data")
+            logger.error(exception)
 
 
 def convert_time(ts):

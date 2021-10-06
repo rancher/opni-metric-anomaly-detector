@@ -67,14 +67,17 @@ class MetricAnomalyDetector:
         logger.debug(f"history data loaded : {len(self.metric_xs)}")
 
     def run(self, data):
-        self.train_and_predict()
         xs_raw, y_raw = data[0]["value"]
         xs_raw = (
             int(xs_raw) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
         )  ## convert time to start of minute :00
         xs_new = datetime.fromtimestamp(float(xs_raw))
+        if xs_new in self.metric_xs:
+            logger.error("ERROR: duplicated timestamp!")
+            return None
         y_new = float(y_raw)
 
+        self.train_and_predict()
         is_anomaly = 0
         is_alert = 0
         alert_len = None
@@ -219,10 +222,10 @@ class MetricAnomalyDetector:
         every time there's a new data point, train a new model and forecast one step in future.
         """
         if len(self.metric_xs) >= MIN_TRAINING_SIZE:
-            training_dataseries = pd.Series(self.metric_y, self.metric_xs).asfreq(
+            tdf = pd.Series(self.metric_y, self.metric_xs)
+            training_dataseries = (tdf[~tdf.index.duplicated(keep="first")]).asfreq(
                 freq="T"
-            )
-            # training_dataseries = pd.Series(self.metric_y, self.metric_xs)
+            )  ## TODO: better efficiency
             ## max training size should be [ROLLING_TRAINING_SIZE]
             if len(self.metric_y) - self.start_index > ROLLING_TRAINING_SIZE:
                 self.start_index = len(self.metric_y) - ROLLING_TRAINING_SIZE
