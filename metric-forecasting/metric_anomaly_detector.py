@@ -73,7 +73,7 @@ class MetricAnomalyDetector:
         )  ## convert time to start of minute :00
         xs_new = datetime.fromtimestamp(float(xs_raw))
         if xs_new in self.metric_xs:
-            logger.error("ERROR: duplicated timestamp!")
+            logger.warning("ERROR: duplicated timestamp!")
             return None
         y_new = float(y_raw)
 
