@@ -736,11 +736,41 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LowerBound"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UpperBound"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 0,
         "y": 7
@@ -760,7 +790,7 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "",
+          "alias": "CpuUsage",
           "bucketAggs": [
             {
               "field": "timestamp",
@@ -771,30 +801,64 @@
               "type": "date_histogram"
             }
           ],
+          "hide": false,
           "metrics": [
             {
               "field": "y",
               "id": "1",
               "type": "avg"
-            },
-            {
-              "field": "yhat",
-              "id": "3",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_lower",
-              "id": "4",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_upper",
-              "id": "5",
-              "type": "avg"
             }
           ],
           "query": "metric_name:cpu_usage",
           "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "LowerBound",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "auto"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "yhat_lower",
+              "id": "1",
+              "type": "avg"
+            }
+          ],
+          "query": "metric_name:cpu_usage",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "UpperBound",
+          "bucketAggs": [
+            {
+              "field": "timestamp",
+              "id": "2",
+              "settings": {
+                "interval": "auto"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "yhat_upper",
+              "id": "1",
+              "type": "avg"
+            }
+          ],
+          "query": "metric_name:cpu_usage",
+          "refId": "C",
           "timeField": "timestamp"
         }
       ],
@@ -857,7 +921,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "super-light-blue",
                   "mode": "fixed"
                 }
               }
@@ -872,7 +936,37 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "blue",
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "LowerBound"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UpperBound"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
                   "mode": "fixed"
                 }
               }
@@ -881,7 +975,7 @@
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 8,
         "y": 7
@@ -901,7 +995,7 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "",
+          "alias": "MemoryUsage",
           "bucketAggs": [
             {
               "id": "2",
@@ -916,25 +1010,56 @@
               "field": "y",
               "id": "1",
               "type": "avg"
-            },
-            {
-              "field": "yhat",
-              "id": "3",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_lower",
-              "id": "4",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_upper",
-              "id": "5",
-              "type": "avg"
             }
           ],
           "query": "metric_name:memory_usage",
           "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "LowerBound",
+          "bucketAggs": [
+            {
+              "id": "2",
+              "settings": {
+                "interval": "auto"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "yhat_lower",
+              "id": "1",
+              "type": "avg"
+            }
+          ],
+          "query": "metric_name:memory_usage",
+          "refId": "B",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "UpperBound",
+          "bucketAggs": [
+            {
+              "id": "2",
+              "settings": {
+                "interval": "auto"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "yhat_upper",
+              "id": "1",
+              "type": "avg"
+            }
+          ],
+          "query": "metric_name:memory_usage",
+          "refId": "C",
           "timeField": "timestamp"
         }
       ],
@@ -1015,11 +1140,26 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UpperBound"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
           }
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 10,
         "w": 8,
         "x": 16,
         "y": 7
@@ -1039,7 +1179,7 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "",
+          "alias": "DiskUsage",
           "bucketAggs": [
             {
               "id": "2",
@@ -1054,25 +1194,33 @@
               "field": "y",
               "id": "1",
               "type": "avg"
-            },
-            {
-              "field": "yhat",
-              "id": "3",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_lower",
-              "id": "4",
-              "type": "avg"
-            },
-            {
-              "field": "yhat_upper",
-              "id": "5",
-              "type": "avg"
             }
           ],
           "query": "metric_name:disk_usage",
           "refId": "A",
+          "timeField": "timestamp"
+        },
+        {
+          "alias": "UpperBound",
+          "bucketAggs": [
+            {
+              "id": "2",
+              "settings": {
+                "interval": "auto"
+              },
+              "type": "date_histogram"
+            }
+          ],
+          "hide": false,
+          "metrics": [
+            {
+              "field": "yhat_upper",
+              "id": "1",
+              "type": "avg"
+            }
+          ],
+          "query": "metric_name:disk_usage",
+          "refId": "B",
           "timeField": "timestamp"
         }
       ],
@@ -1138,7 +1286,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 97
+                "value": 201
               }
             ]
           },
@@ -1186,7 +1334,79 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 123
+                "value": 69
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 157
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 106
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_len"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 98
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "confidence_score"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 131
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 82
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 79
               }
             ]
           }
@@ -1196,7 +1416,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "id": 8,
       "options": {
@@ -1249,31 +1469,40 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
+              "alert_score": false,
               "confidence_score": true,
+              "is_anomaly": true,
+              "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
-              "_index": 2,
-              "_type": 3,
-              "alert_score": 13,
-              "confidence_score": 4,
+              "_index": 6,
+              "_type": 7,
+              "alert_id": 2,
+              "alert_len": 9,
+              "alert_score": 8,
+              "confidence_score": 10,
               "is_alert": 5,
-              "is_anomaly": 6,
-              "metric_name": 7,
-              "sort": 8,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 9,
-              "yhat": 10,
-              "yhat_lower": 11,
-              "yhat_upper": 12
+              "y": 3,
+              "yhat": 4,
+              "yhat_lower": 14,
+              "yhat_upper": 15
             },
-            "renameByName": {}
+            "renameByName": {
+              "confidence_score": "",
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
+            }
           }
         }
       ],
@@ -1377,6 +1606,78 @@
                 "value": 90
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 99
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_len"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 99
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "confidence_score"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_alert"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 81
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 65
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 71
+              }
+            ]
           }
         ]
       },
@@ -1384,7 +1685,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 16
+        "y": 17
       },
       "id": 9,
       "options": {
@@ -1437,31 +1738,39 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
+              "alert_score": false,
               "confidence_score": true,
+              "is_anomaly": true,
+              "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
-              "_index": 2,
-              "_type": 3,
-              "alert_score": 9,
-              "confidence_score": 4,
-              "is_alert": 5,
-              "is_anomaly": 6,
-              "metric_name": 7,
-              "sort": 8,
+              "_index": 5,
+              "_type": 6,
+              "alert_id": 2,
+              "alert_len": 9,
+              "alert_score": 8,
+              "confidence_score": 10,
+              "is_alert": 7,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 10,
-              "yhat": 11,
-              "yhat_lower": 12,
-              "yhat_upper": 13
+              "y": 3,
+              "yhat": 4,
+              "yhat_lower": 14,
+              "yhat_upper": 15
             },
-            "renameByName": {}
+            "renameByName": {
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
+            }
           }
         }
       ],
@@ -1565,6 +1874,78 @@
                 "value": 90
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 87
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alert_len"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 117
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "confidence_score"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "is_alert"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "actual"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 75
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "typical"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 82
+              }
+            ]
           }
         ]
       },
@@ -1572,7 +1953,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 16
+        "y": 17
       },
       "id": 10,
       "options": {
@@ -1625,31 +2006,39 @@
               "_id": true,
               "_index": true,
               "_type": true,
-              "alert_score": true,
+              "alert_score": false,
               "confidence_score": true,
+              "is_anomaly": true,
+              "metric_name": true,
               "sort": true,
-              "y": true,
-              "yhat": true,
+              "y": false,
+              "yhat": false,
               "yhat_lower": true,
               "yhat_upper": true
             },
             "indexByName": {
               "_id": 1,
               "_index": 2,
-              "_type": 3,
-              "alert_score": 9,
-              "confidence_score": 4,
-              "is_alert": 5,
-              "is_anomaly": 6,
-              "metric_name": 7,
-              "sort": 8,
+              "_type": 6,
+              "alert_id": 3,
+              "alert_len": 10,
+              "alert_score": 8,
+              "confidence_score": 9,
+              "is_alert": 7,
+              "is_anomaly": 11,
+              "metric_name": 12,
+              "sort": 13,
               "timestamp": 0,
-              "y": 10,
-              "yhat": 11,
-              "yhat_lower": 12,
-              "yhat_upper": 13
+              "y": 4,
+              "yhat": 5,
+              "yhat_lower": 14,
+              "yhat_upper": 15
             },
-            "renameByName": {}
+            "renameByName": {
+              "timestamp": "time",
+              "y": "actual",
+              "yhat": "typical"
+            }
           }
         }
       ],
@@ -1664,12 +2053,12 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "MetricAnomaly",
   "uid": "8iPQXA4nk",
-  "version": 2
+  "version": 42
 }
