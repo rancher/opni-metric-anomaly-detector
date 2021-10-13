@@ -138,7 +138,7 @@ async def scrape_prometheus_metrics(inference_queue):
         thistime = time.time()
         # metrics to collect.
         cpu_usage = prom.custom_query(
-            query='100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))'
+            query='100 * sum(irate({__name__=~"node_cpu_seconds_total|windows_cpu_time_total",mode!="idle"}[5m])) / (sum(irate({__name__=~"node_cpu_seconds_total|windows_cpu_time_total",mode!="idle"}[5m])) + sum(irate({__name__=~"node_cpu_seconds_total|windows_cpu_time_total",mode="idle"}[5m])))'
         )
         memory_usage = prom.custom_query(
             query="100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))"

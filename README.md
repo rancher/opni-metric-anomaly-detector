@@ -22,18 +22,18 @@ kubectl apply -f metric_anomaly_detector.yaml
 Make sure to update the metric_anomaly_detector.yaml file to point to the correct image path!
 
 #### Import Grafana Dashboard
-1. Navigate to Grafana and login. For Rancher monitoring user, the username/password is `admin/prom-operator`.
+1. Navigate to Grafana and login. For Rancher monitoring user, the username/password is `admin/prom-operator`, otherwise it's likely to be `admin/admin`
 2. [Add Elasticsearch as datasource](https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/#add-a-data-source), and fillin these fields with following values:
 ```
-URL: https://opendistro-es-client-service.opni-demo.svc.cluster.local:9200
+URL: https://opni-es-client.opni.svc:9200
 Basic auth: enable
 Skip TLS Verify: enable
 Basic Auth Details:
     User: admin
-    Password: admin
+    Password: <opni-es-password>
 Index name: mymetrics
 Time field name: timestamp
-Version: 7.0+
+Version: 7.0+ or 7.10+
 ```
 then clike `Save & Test`.
 Expected resonse: `Index OK. Time field name OK.`
