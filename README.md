@@ -38,7 +38,7 @@ Version: 7.0+
 Then click `Save & Test`. The expected response should be `Index OK. Time field name OK.`
 3. [Import dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard) and upload the json file `grafana-dashboard.json` in this repo.
 
-A dashboard named `MetricAnomaly` should be ready to go.
+A dashboard named `MetricAnomaly` should now be available.
 
 
 ## Contributing
