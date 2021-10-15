@@ -35,7 +35,7 @@ Index name: mymetrics
 Time field name: timestamp
 Version: 7.0+
 ```
-Then click `Save & Test`, the expected response is `Index OK. Time field name OK.`
+Then click `Save & Test`. The expected response should be `Index OK. Time field name OK.`
 3. [Import dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard) and upload the json file `grafana-dashboard.json` in this repo.
 
 A dashboard named `MetricAnomaly` should be ready to go.
