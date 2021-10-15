@@ -30,10 +30,10 @@ Basic auth: enable
 Skip TLS Verify: enable
 Basic Auth Details:
     User: admin
-    Password: <opni-es-password>
+    Password: <opni-es-password> (you can get it with: kubectl get secret opni-es-password -o go-template='{{ .data.password | base64decode }}')
 Index name: mymetrics
 Time field name: timestamp
-Version: 7.0+ or 7.10+
+Version: 7.0+
 ```
 then clike `Save & Test`.
 Expected resonse: `Index OK. Time field name OK.`
