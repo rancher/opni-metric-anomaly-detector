@@ -23,7 +23,7 @@ Make sure to update the metric_anomaly_detector.yaml file to point to the correc
 
 #### Import Grafana Dashboard
 1. Navigate to Grafana and log in. For a Rancher Monitoring user, the default username/password is `admin/prom-operator`. Otherwise, it is likely to be `admin/admin`.
-2. [Add Elasticsearch as a datasource](https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/#add-a-data-source), and fillin these fields with following values:
+2. [Add Elasticsearch as a Data Source](https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/#add-a-data-source), and fill in these fields with following values:
 ```
 URL: https://opni-es-client.opni.svc:9200
 Basic Auth: enable
