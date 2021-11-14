@@ -7,11 +7,16 @@ import uuid
 from datetime import datetime
 
 # Third Party
+import uvicorn
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ConnectionTimeout
 from elasticsearch.helpers import BulkIndexError, async_streaming_bulk
 from metric_anomaly_detector import MetricAnomalyDetector
 from prometheus_api_client import PrometheusConnect
+from fastapi import FastAPI, Response
+from prometheus_client import Gauge, generate_latest, REGISTRY
+
+app = FastAPI()
 
 PROMETHEUS_ENDPOINT = os.getenv("PROMETHEUS_ENDPOINT", "http://localhost:9090")
 
@@ -60,6 +65,40 @@ metrics_list = [
     "memory_usage",
     "disk_usage",
 ]  ## TODO: default metrics and their queries should be configured in a file.
+
+GAUGE_DICT = dict()
+MAD_DICT = dict()
+PROMETHEUS_CUSTOM_QUERIES = {
+    'cpu_usage': '100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))',
+    'memory_usage': '100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))',
+    'disk_usage': '(sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"})- sum(node_filesystem_free_bytes{device!~"rootfs|HarddiskVolume.+"})) / sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"}) * 100 ',
+}
+COLUMNS_LIST = [
+    'is_anomaly',
+    'alert_score',
+    'is_alert',
+    'y',
+    'yhat',
+    'yhat_lower',
+    'yhat_upper',
+]
+
+@app.on_event("startup")
+async def startup_event():
+    for metric_name in PROMETHEUS_CUSTOM_QUERIES:
+        MAD_DICT[metric_name] = MetricAnomalyDetector(metric_name)
+        GAUGE_DICT[metric_name] = Gauge(metric_name, metric_name, ['value_type'])
+        await load_history_data(metric_name, MAD_DICT[metric_name])
+
+@app.get("/")
+@app.get("/metrics")
+async def get_metrics():
+    for metric_name, query in PROMETHEUS_CUSTOM_QUERIES:
+        current_data = prom.custom_query(query=query)
+        prediction = MAD_DICT[metric_name].run(current_data)
+        for column in COLUMNS_LIST:
+            GAUGE_DICT[metric_name].labels(value_type=column).set(prediction[column])
+    return Response(content=generate_latest(REGISTRY).decode('utf-8'), media_type='text; charset=utf-8')
 
 
 async def doc_generator(metrics_payloads):
@@ -156,15 +195,19 @@ async def scrape_prometheus_metrics(inference_queue):
             LOOP_TIME_SECOND - ((time.time() - starttime) % LOOP_TIME_SECOND)
         )
 
+async def run_metrics_server():
+    uvicorn.run(app, port=8000, host='0.0.0.0')
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     inference_queue = asyncio.Queue(loop=loop)
     prometheus_scraper_coroutine = scrape_prometheus_metrics(inference_queue)
     update_metrics_coroutine = update_metrics(inference_queue)
+    uvicorn_server_coroutine = run_metrics_server()
 
     loop.run_until_complete(
-        asyncio.gather(prometheus_scraper_coroutine, update_metrics_coroutine)
+        asyncio.gather(prometheus_scraper_coroutine, update_metrics_coroutine, uvicorn_server_coroutine)
     )
     try:
         loop.run_forever()
