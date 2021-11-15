@@ -94,13 +94,19 @@ async def startup_event():
 @app.get("/")
 @app.get("/metrics")
 async def get_metrics():
+    metrics_payloads = []
     for metric_name, query in PROMETHEUS_CUSTOM_QUERIES.items():
-        metrics_payloads = []
         current_data = prom.custom_query(query=query)
         prediction = MAD_DICT[metric_name].run(current_data)
-        metrics_payloads.append(prediction)
-        for column in COLUMNS_LIST:
-            GAUGE_DICT[metric_name].labels(value_type=column).set(prediction[column])
+        if prediction:
+            metrics_payloads.append(prediction)
+            for column in COLUMNS_LIST:
+                if prediction[column] is not None:
+                    GAUGE_DICT[metric_name].labels(value_type=column).set(prediction[column])
+                else:
+                    logging.info(f"no data for {column} in {metric_name} prediction")
+        else:
+            logging.warning(f"no prediction data for {metric_name}")
      # send data to ES
     try:
         async for ok, result in async_streaming_bulk(
