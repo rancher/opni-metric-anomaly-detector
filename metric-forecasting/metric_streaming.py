@@ -76,6 +76,8 @@ PROMETHEUS_CUSTOM_QUERIES = {
 COLUMNS_LIST = [
     'is_anomaly',
     'alert_score',
+    'alert_len',
+    'alert_id'
     'is_alert',
     'y',
     'yhat',
