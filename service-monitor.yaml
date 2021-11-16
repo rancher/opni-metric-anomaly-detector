@@ -31,3 +31,23 @@ spec:
       opni.io/service: metrics
   endpoints:
   - port: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: opni-alert-rules
+  namespace: cattle-monitoring-system
+spec:
+  groups:
+  - name: opni-rules
+    rules:
+    - alert: OpniCpuUsageAnomalous
+      expr: cpu_usage{value_type="is_alert"} >= 1
+      annotations:
+        summary: "Anomalous CPU usage in cluster"
+        description: "Opni has calculated an alert score >= 5 for cluster CPU usage"
+    - alert: OpniMemoryUsageAnomalous
+      expr: memory_usage{value_type="is_alert"} >= 1
+      annotations:
+        summary: "Anomalous memory usage in cluster"
+        description: "Opni has calculated an alert score >= 5 for cluster memory usage"
