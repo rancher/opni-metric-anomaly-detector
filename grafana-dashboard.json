@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 34,
+  "id": 38,
   "links": [],
   "panels": [
     {
@@ -25,7 +25,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "mappings": [],
           "max": 100,
           "min": 0,
@@ -65,7 +64,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "(1- (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])))) * 100",
@@ -84,7 +83,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "mappings": [],
           "max": 100,
           "min": 0,
@@ -124,7 +122,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
@@ -143,7 +141,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "mappings": [],
           "max": 100,
           "min": 0,
@@ -183,7 +180,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "(sum(node_filesystem_size_bytes{device!~\"rootfs|HarddiskVolume.+\"})- sum(node_filesystem_free_bytes{device!~\"rootfs|HarddiskVolume.+\"})) / sum(node_filesystem_size_bytes{device!~\"rootfs|HarddiskVolume.+\"}) * 100",
@@ -203,7 +200,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -258,7 +254,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "sum(irate({__name__=~\"node_cpu_seconds_total|windows_cpu_time_total\",mode!=\"idle\"}[5m]))",
@@ -280,7 +276,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -335,7 +330,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "sum(kube_node_status_allocatable_cpu_cores{})",
@@ -358,7 +353,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -413,7 +407,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "sum({__name__=~\"node_memory_MemTotal_bytes|windows_cs_physical_memory_bytes\"}) -sum({__name__=~\"node_memory_MemAvailable_bytes|windows_os_physical_memory_free_bytes\"})",
@@ -436,7 +430,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -491,7 +484,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "sum (kube_node_status_allocatable_memory_bytes{})",
@@ -514,7 +507,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -569,7 +561,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "(sum(node_filesystem_size_bytes{device!~\"rootfs|HarddiskVolume.+\"}) - sum(node_filesystem_free_bytes{device!~\"rootfs|HarddiskVolume.+\"}) OR on() vector(0)) + (sum(windows_logical_disk_size_bytes{volume!~\"(HarddiskVolume.+|[A-Z]:.+)\"}) - sum(windows_logical_disk_free_bytes{volume!~\"(HarddiskVolume.+|[A-Z]:.+)\"}) OR on() vector(0))",
@@ -592,7 +584,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
@@ -647,7 +638,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "expr": "(sum(node_filesystem_size_bytes{device!~\"rootfs|HarddiskVolume.+\"}) OR on() vector(0)) + (sum(windows_logical_disk_size_bytes{volume!~\"(HarddiskVolume.+|[A-Z]:.+)\"}) OR on() vector(0))",
@@ -663,7 +654,7 @@
       "type": "stat"
     },
     {
-      "datasource": "Elasticsearch",
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -775,7 +766,7 @@
         "x": 0,
         "y": 7
       },
-      "id": 2,
+      "id": 20,
       "options": {
         "graph": {},
         "legend": {
@@ -790,10 +781,9 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "CpuUsage",
+          "alias": "",
           "bucketAggs": [
             {
-              "field": "timestamp",
               "id": "2",
               "settings": {
                 "interval": "auto"
@@ -801,65 +791,35 @@
               "type": "date_histogram"
             }
           ],
-          "hide": false,
+          "exemplar": true,
+          "expr": "cpu_usage{value_type=\"y\"}",
+          "interval": "",
+          "legendFormat": "CPUUsage",
           "metrics": [
             {
-              "field": "y",
               "id": "1",
-              "type": "avg"
+              "type": "count"
             }
           ],
-          "query": "metric_name:cpu_usage",
+          "query": "",
           "refId": "A",
           "timeField": "timestamp"
         },
         {
-          "alias": "LowerBound",
-          "bucketAggs": [
-            {
-              "field": "timestamp",
-              "id": "2",
-              "settings": {
-                "interval": "auto"
-              },
-              "type": "date_histogram"
-            }
-          ],
+          "exemplar": true,
+          "expr": "cpu_usage{value_type=\"yhat_upper\"}",
           "hide": false,
-          "metrics": [
-            {
-              "field": "yhat_lower",
-              "id": "1",
-              "type": "avg"
-            }
-          ],
-          "query": "metric_name:cpu_usage",
-          "refId": "B",
-          "timeField": "timestamp"
+          "interval": "",
+          "legendFormat": "UpperBound",
+          "refId": "B"
         },
         {
-          "alias": "UpperBound",
-          "bucketAggs": [
-            {
-              "field": "timestamp",
-              "id": "2",
-              "settings": {
-                "interval": "auto"
-              },
-              "type": "date_histogram"
-            }
-          ],
+          "exemplar": true,
+          "expr": "cpu_usage{value_type=\"yhat_lower\"}",
           "hide": false,
-          "metrics": [
-            {
-              "field": "yhat_upper",
-              "id": "1",
-              "type": "avg"
-            }
-          ],
-          "query": "metric_name:cpu_usage",
-          "refId": "C",
-          "timeField": "timestamp"
+          "interval": "",
+          "legendFormat": "LowerBound",
+          "refId": "C"
         }
       ],
       "timeFrom": null,
@@ -868,7 +828,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": "Elasticsearch",
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -980,7 +940,7 @@
         "x": 8,
         "y": 7
       },
-      "id": 4,
+      "id": 21,
       "options": {
         "graph": {},
         "legend": {
@@ -995,7 +955,7 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "MemoryUsage",
+          "alias": "",
           "bucketAggs": [
             {
               "id": "2",
@@ -1005,69 +965,42 @@
               "type": "date_histogram"
             }
           ],
+          "exemplar": true,
+          "expr": "memory_usage{value_type=\"y\"}",
+          "interval": "",
+          "legendFormat": "MemoryUsage",
           "metrics": [
             {
-              "field": "y",
               "id": "1",
-              "type": "avg"
+              "type": "count"
             }
           ],
-          "query": "metric_name:memory_usage",
+          "query": "",
           "refId": "A",
           "timeField": "timestamp"
         },
         {
-          "alias": "LowerBound",
-          "bucketAggs": [
-            {
-              "id": "2",
-              "settings": {
-                "interval": "auto"
-              },
-              "type": "date_histogram"
-            }
-          ],
+          "exemplar": true,
+          "expr": "memory_usage{value_type=\"yhat_upper\"}",
           "hide": false,
-          "metrics": [
-            {
-              "field": "yhat_lower",
-              "id": "1",
-              "type": "avg"
-            }
-          ],
-          "query": "metric_name:memory_usage",
-          "refId": "B",
-          "timeField": "timestamp"
+          "interval": "",
+          "legendFormat": "UpperBound",
+          "refId": "B"
         },
         {
-          "alias": "UpperBound",
-          "bucketAggs": [
-            {
-              "id": "2",
-              "settings": {
-                "interval": "auto"
-              },
-              "type": "date_histogram"
-            }
-          ],
+          "exemplar": true,
+          "expr": "memory_usage{value_type=\"yhat_lower\"}",
           "hide": false,
-          "metrics": [
-            {
-              "field": "yhat_upper",
-              "id": "1",
-              "type": "avg"
-            }
-          ],
-          "query": "metric_name:memory_usage",
-          "refId": "C",
-          "timeField": "timestamp"
+          "interval": "",
+          "legendFormat": "LowerBound",
+          "refId": "C"
         }
       ],
       "title": "Memory Usage",
       "type": "timeseries"
     },
     {
-      "datasource": "Elasticsearch",
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1179,7 +1112,7 @@
       "pluginVersion": "7.4.5",
       "targets": [
         {
-          "alias": "DiskUsage",
+          "alias": "",
           "bucketAggs": [
             {
               "id": "2",
@@ -1189,39 +1122,27 @@
               "type": "date_histogram"
             }
           ],
+          "exemplar": true,
+          "expr": "disk_usage{value_type=\"y\"}",
+          "interval": "",
+          "legendFormat": "DiskUsage",
           "metrics": [
             {
-              "field": "y",
               "id": "1",
-              "type": "avg"
+              "type": "count"
             }
           ],
-          "query": "metric_name:disk_usage",
+          "query": "",
           "refId": "A",
           "timeField": "timestamp"
         },
         {
-          "alias": "UpperBound",
-          "bucketAggs": [
-            {
-              "id": "2",
-              "settings": {
-                "interval": "auto"
-              },
-              "type": "date_histogram"
-            }
-          ],
+          "exemplar": true,
+          "expr": "disk_usage{value_type=\"yhat_upper\"}",
           "hide": false,
-          "metrics": [
-            {
-              "field": "yhat_upper",
-              "id": "1",
-              "type": "avg"
-            }
-          ],
-          "query": "metric_name:disk_usage",
-          "refId": "B",
-          "timeField": "timestamp"
+          "interval": "",
+          "legendFormat": "UpperBound",
+          "refId": "B"
         }
       ],
       "title": "Disk Usage",
@@ -1423,7 +1344,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "alias": "",
@@ -1692,7 +1613,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "alias": "",
@@ -1960,7 +1881,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.4.5",
+      "pluginVersion": "7.5.8",
       "targets": [
         {
           "alias": "",
@@ -2060,5 +1981,5 @@
   "timezone": "",
   "title": "MetricAnomaly",
   "uid": "8iPQXA4nk",
-  "version": 42
+  "version": 2
 }

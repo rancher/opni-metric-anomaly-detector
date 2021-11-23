@@ -1,4 +1,5 @@
 FROM rancher/opni-python-base:3.8
+EXPOSE 8000
 
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
