@@ -43,8 +43,9 @@ ES_RESERVED_KEYWORDS = {
 
 
 class MetricAnomalyDetector:
-    def __init__(self, metric_name):
+    def __init__(self, metric_name, metric_config={}):
         self.metric_name = metric_name
+        self.metric_config = metric_config
         self.metric_xs = []
         self.metric_y = []
         self.metric_rawy = []
