@@ -1,18 +1,20 @@
 # Standard Library
-import asyncio
 import logging
 import os
-import time
 import uuid
 from datetime import datetime
 
 # Third Party
+import uvicorn
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ConnectionTimeout
 from elasticsearch.helpers import BulkIndexError, async_streaming_bulk
+from fastapi import FastAPI, Response
 from metric_anomaly_detector import MetricAnomalyDetector
-from metrics_config import config
 from prometheus_api_client import PrometheusConnect
+from prometheus_client import REGISTRY, Gauge, generate_latest
+
+app = FastAPI()
 
 PROMETHEUS_ENDPOINT = os.getenv("PROMETHEUS_ENDPOINT", "http://localhost:9090")
 
@@ -58,6 +60,76 @@ es = AsyncElasticsearch(
     retry_on_timeout=True,
 )
 
+metrics_list = [
+    "cpu_usage",
+    "memory_usage",
+    "disk_usage",
+]  ## TODO: default metrics and their queries should be configured in a file.
+
+GAUGE_DICT = dict()
+MAD_DICT = dict()
+PROMETHEUS_CUSTOM_QUERIES = {
+    "cpu_usage": '100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))',
+    "memory_usage": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
+    "disk_usage": '(sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"})- sum(node_filesystem_free_bytes{device!~"rootfs|HarddiskVolume.+"})) / sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"}) * 100 ',
+}
+COLUMNS_LIST = [
+    "is_anomaly",
+    "alert_score",
+    "alert_len",
+    "alert_id" "is_alert",
+    "y",
+    "yhat",
+    "yhat_lower",
+    "yhat_upper",
+]
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("loading history on webserver startup")
+    for metric_name in PROMETHEUS_CUSTOM_QUERIES.keys():
+        MAD_DICT[metric_name] = MetricAnomalyDetector(
+            metric_name, PROMETHEUS_CUSTOM_QUERIES[metric_name]
+        )
+        GAUGE_DICT[metric_name] = Gauge(metric_name, metric_name, ["value_type"])
+        await load_history_data(metric_name, MAD_DICT[metric_name])
+
+
+@app.get("/")
+@app.get("/metrics")
+async def get_metrics():
+    metrics_payloads = []
+    for metric_name, query in PROMETHEUS_CUSTOM_QUERIES.items():
+        current_data = prom.custom_query(query=query)
+        prediction = MAD_DICT[metric_name].run(current_data)
+        if prediction:
+            metrics_payloads.append(prediction)
+            for column in COLUMNS_LIST:
+                if prediction[column] is not None:
+                    GAUGE_DICT[metric_name].labels(value_type=column).set(
+                        prediction[column]
+                    )
+                else:
+                    logging.info(f"no data for {column} in {metric_name} prediction")
+        else:
+            logging.warning(f"no prediction data for {metric_name}")
+    # send data to ES
+    try:
+        async for ok, result in async_streaming_bulk(
+            es, doc_generator(metrics_payloads)
+        ):
+            action, result = result.popitem()
+            if not ok:
+                logging.error("failed to {} document {}".format())
+    except (BulkIndexError, ConnectionTimeout) as exception:
+        logging.error("Failed to index data")
+        logging.error(exception)
+    return Response(
+        content=generate_latest(REGISTRY).decode("utf-8"),
+        media_type="text; charset=utf-8",
+    )
+
 
 async def doc_generator(metrics_payloads):
     for mp in metrics_payloads:
@@ -88,77 +160,9 @@ async def load_history_data(metric_name, mad: MetricAnomalyDetector):
         logger.warning("fail to load history metrics data!")
 
 
-async def update_metrics(inference_queue):
-    mad_dict = {}
-    for metric_name in config:  # init models
-        mad = MetricAnomalyDetector(metric_name, config[metric_name])
-        await load_history_data(metric_name, mad)
-        mad_dict[metric_name] = mad
-    while True:
-        new_data = await inference_queue.get()
-        starttime = time.time()
-        metrics_payloads = []
-        for metric_name in config:
-            if len(new_data[metric_name]) == 0:
-                continue
-            json_payload = mad_dict[metric_name].run(new_data[metric_name])  # run MAD
-            if json_payload:
-                metrics_payloads.append(json_payload)
-
-        # send data to ES
-        try:
-            async for ok, result in async_streaming_bulk(
-                es, doc_generator(metrics_payloads)
-            ):
-                action, result = result.popitem()
-                if not ok:
-                    logger.error("failed to {} document {}".format())
-        except (BulkIndexError, ConnectionTimeout) as exception:
-            logger.error("Failed to index data")
-            logger.error(exception)
-
-
 def convert_time(ts):
     return datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S")
 
 
-async def scrape_prometheus_metrics(inference_queue):
-    starttime = time.time()
-    wait_time = (
-        int(starttime) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
-        + LOOP_TIME_SECOND
-        - starttime
-    )
-    await asyncio.sleep(wait_time)  # wait to the start of next minute
-    starttime = time.time()
-    logger.debug(f"wait time : {wait_time}, current time : {convert_time(starttime)}")
-
-    while True:
-        thistime = time.time()
-        # metrics to collect.
-
-        inference_queue_payload = {}
-        for mname in config:
-            mquery = config[mname]["metric_prometheus_query"]
-            logger.info(f"querying metrics: {mname}")
-            inference_queue_payload[mname] = prom.custom_query(query=mquery)
-
-        await inference_queue.put(inference_queue_payload)
-        await asyncio.sleep(  # to make sure it scrapes every LOOP_TIME seconds.
-            LOOP_TIME_SECOND - ((time.time() - starttime) % LOOP_TIME_SECOND)
-        )
-
-
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    inference_queue = asyncio.Queue(loop=loop)
-    prometheus_scraper_coroutine = scrape_prometheus_metrics(inference_queue)
-    update_metrics_coroutine = update_metrics(inference_queue)
-
-    loop.run_until_complete(
-        asyncio.gather(prometheus_scraper_coroutine, update_metrics_coroutine)
-    )
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
+    uvicorn.run(app, port=8000, host="0.0.0.0")
