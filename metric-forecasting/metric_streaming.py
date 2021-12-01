@@ -1,8 +1,6 @@
 # Standard Library
-import asyncio
 import logging
 import os
-import time
 import uuid
 from datetime import datetime
 
@@ -11,10 +9,10 @@ import uvicorn
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ConnectionTimeout
 from elasticsearch.helpers import BulkIndexError, async_streaming_bulk
+from fastapi import FastAPI, Response
 from metric_anomaly_detector import MetricAnomalyDetector
 from prometheus_api_client import PrometheusConnect
-from fastapi import FastAPI, Response
-from prometheus_client import Gauge, generate_latest, REGISTRY
+from prometheus_client import REGISTRY, Gauge, generate_latest
 
 app = FastAPI()
 
@@ -32,6 +30,8 @@ ROLLING_TRAINING_SIZE = 1440
 ES_ENDPOINT = os.getenv("ES_ENDPOINT", "https://localhost:9200")
 ES_USERNAME = os.getenv("ES_USERNAME", "admin")
 ES_PASSWORD = os.getenv("ES_PASSWORD", "admin")
+
+ES_INDEX = "opni-metric"
 
 ES_RESERVED_KEYWORDS = {
     "_id",
@@ -69,29 +69,31 @@ metrics_list = [
 GAUGE_DICT = dict()
 MAD_DICT = dict()
 PROMETHEUS_CUSTOM_QUERIES = {
-    'cpu_usage': '100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))',
-    'memory_usage': '100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))',
-    'disk_usage': '(sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"})- sum(node_filesystem_free_bytes{device!~"rootfs|HarddiskVolume.+"})) / sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"}) * 100 ',
+    "cpu_usage": '100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))',
+    "memory_usage": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
+    "disk_usage": '(sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"})- sum(node_filesystem_free_bytes{device!~"rootfs|HarddiskVolume.+"})) / sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"}) * 100 ',
 }
 COLUMNS_LIST = [
-    'is_anomaly',
-    'alert_score',
-    'alert_len',
-    'alert_id'
-    'is_alert',
-    'y',
-    'yhat',
-    'yhat_lower',
-    'yhat_upper',
+    "is_anomaly",
+    "alert_score",
+    "alert_len",
+    "alert_id",
+    "is_alert",
+    "y",
+    "yhat",
+    "yhat_lower",
+    "yhat_upper",
 ]
+
 
 @app.on_event("startup")
 async def startup_event():
     logger.info("loading history on webserver startup")
     for metric_name in PROMETHEUS_CUSTOM_QUERIES.keys():
         MAD_DICT[metric_name] = MetricAnomalyDetector(metric_name)
-        GAUGE_DICT[metric_name] = Gauge(metric_name, metric_name, ['value_type'])
+        GAUGE_DICT[metric_name] = Gauge(metric_name, metric_name, ["value_type"])
         await load_history_data(metric_name, MAD_DICT[metric_name])
+
 
 @app.get("/")
 @app.get("/metrics")
@@ -104,12 +106,14 @@ async def get_metrics():
             metrics_payloads.append(prediction)
             for column in COLUMNS_LIST:
                 if prediction[column] is not None:
-                    GAUGE_DICT[metric_name].labels(value_type=column).set(prediction[column])
+                    GAUGE_DICT[metric_name].labels(value_type=column).set(
+                        prediction[column]
+                    )
                 else:
                     logging.info(f"no data for {column} in {metric_name} prediction")
         else:
             logging.warning(f"no prediction data for {metric_name}")
-     # send data to ES
+    # send data to ES
     try:
         async for ok, result in async_streaming_bulk(
             es, doc_generator(metrics_payloads)
@@ -120,13 +124,16 @@ async def get_metrics():
     except (BulkIndexError, ConnectionTimeout) as exception:
         logging.error("Failed to index data")
         logging.error(exception)
-    return Response(content=generate_latest(REGISTRY).decode('utf-8'), media_type='text; charset=utf-8')
+    return Response(
+        content=generate_latest(REGISTRY).decode("utf-8"),
+        media_type="text; charset=utf-8",
+    )
 
 
 async def doc_generator(metrics_payloads):
     for mp in metrics_payloads:
         yield {
-            "_index": "mymetrics",
+            "_index": ES_INDEX,
             "_id": uuid.uuid4(),
             "_source": {
                 k: mp[k]
@@ -144,14 +151,16 @@ async def load_history_data(metric_name, mad: MetricAnomalyDetector):
     }
     try:
         history_data = await es.search(
-            index="mymetrics", body=query, size=ROLLING_TRAINING_SIZE
+            index=ES_INDEX, body=query, size=ROLLING_TRAINING_SIZE
         )
         mad.load(reversed(history_data["hits"]["hits"]))
     except Exception as e:
         logger.warning("fail to load history metrics data!")
 
+
 def convert_time(ts):
     return datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S")
 
+
 if __name__ == "__main__":
-    uvicorn.run(app, port=8000, host='0.0.0.0')
+    uvicorn.run(app, port=8000, host="0.0.0.0")
