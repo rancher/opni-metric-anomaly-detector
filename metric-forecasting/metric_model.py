@@ -1,9 +1,12 @@
 # Standard Library
 import logging
 import os
+import time
 from abc import abstractmethod
+from math import sqrt
 
 # Third Party
+import numpy as np
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
@@ -26,6 +29,15 @@ class MetricModel:
     @abstractmethod
     def predict(self):
         pass
+
+
+def train_test_split(data, n_test):
+    # take last n datapoint as test data.
+    return data[:-n_test], data[-n_test:]
+
+
+def measure_rmse(actual, predicted):
+    return sqrt(np.square(np.subtract(actual, predicted)).mean())
 
 
 class ArimaModel(MetricModel):
@@ -53,6 +65,26 @@ class ArimaModel(MetricModel):
         self.model = SARIMAX(
             data_series, order=self.order, seasonal_order=self.seasonal_order
         ).fit(disp=False)
+
+    def evaluate(self, data_series: pd.Series):
+        # walk-forward evaluation
+        start_time = time.time()
+        n_test = 10
+        predictions = []
+        training, testing = train_test_split(data_series, n_test)
+        history = [x for x in training]
+        for t in testing:
+            model = SARIMAX(
+                history, order=self.order, seasonal_order=self.seasonal_order
+            ).fit(disp=False)
+            yhat = model.forecast(1)[0]  # predict the next value
+            predictions.append(yhat)
+            history.append(t)
+        rmse = measure_rmse(testing, predictions)
+        logger.info(
+            f"model evaluation - rmse: {rmse} in {time.time() - start_time} seconds."
+        )
+        return rmse
 
     def predict(self):
         fc_series = self.model.forecast(RETRAINING_INTERVAL_MINUTE)  # get yhat
