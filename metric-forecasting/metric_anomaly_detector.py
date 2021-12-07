@@ -231,10 +231,9 @@ class MetricAnomalyDetector:
                 self.start_index = len(self.metric_y) - ROLLING_TRAINING_SIZE
             training_dataseries = training_dataseries[self.start_index :]
 
-            eval_interval = 10
+            eval_interval = 10  # every 10 mins
             if len(training_dataseries) % eval_interval == 0:
                 self.metric_model.evaluate(training_dataseries)
-            # TODO: use model evaluation to guide model training.
             self.metric_model.train(training_dataseries)
             preds, lower_bounds, upper_bounds = self.metric_model.predict()
             for p in zip(preds, lower_bounds, upper_bounds):
