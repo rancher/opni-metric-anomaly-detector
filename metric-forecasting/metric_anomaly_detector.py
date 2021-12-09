@@ -12,7 +12,7 @@ from metric_model import ArimaModel
 ## configurable parameters
 RETRAINING_INTERVAL_MINUTE = 1
 ROLLING_TRAINING_SIZE = 1440
-MIN_TRAINING_SIZE = 10
+MIN_TRAINING_SIZE = 30
 ALERT_SCORE_THRESHOLD = 5
 CPD_TRACE_BACK_TIME = 30  ## minutes
 LOOP_TIME_SECOND = 60.0  # unit: second, type: float
@@ -231,9 +231,10 @@ class MetricAnomalyDetector:
                 self.start_index = len(self.metric_y) - ROLLING_TRAINING_SIZE
             training_dataseries = training_dataseries[self.start_index :]
 
+            eval_interval = 10  # every 10 mins
+            if len(training_dataseries) % eval_interval == 0:
+                self.metric_model.evaluate(training_dataseries)
             self.metric_model.train(training_dataseries)
-
             preds, lower_bounds, upper_bounds = self.metric_model.predict()
             for p in zip(preds, lower_bounds, upper_bounds):
-                # logger.debug(p)
                 self.pred_history.append(p)
