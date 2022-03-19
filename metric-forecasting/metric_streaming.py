@@ -1,18 +1,15 @@
 # Standard Library
+import asyncio
 import logging
 import os
-import uuid
+import time
 from datetime import datetime
 
 # Third Party
-import uvicorn
-from elasticsearch import AsyncElasticsearch
-from elasticsearch.exceptions import ConnectionTimeout
-from elasticsearch.helpers import BulkIndexError, async_streaming_bulk
-from fastapi import FastAPI, Response
+import requests
+from fastapi import FastAPI
 from metric_anomaly_detector import MetricAnomalyDetector
-from prometheus_api_client import PrometheusConnect
-from prometheus_client import REGISTRY, Gauge, generate_latest
+from prometheusConnector import PrometheusConnect, list_clusters
 
 app = FastAPI()
 
@@ -23,42 +20,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(messa
 logger = logging.getLogger(__file__)
 logger.setLevel(LOGGING_LEVEL)
 
-prom = PrometheusConnect(url=PROMETHEUS_ENDPOINT, disable_ssl=True)
+
+prom = PrometheusConnect(
+    url=PROMETHEUS_ENDPOINT,
+    cert=("/run/cortex/certs/client/tls.crt", "/run/cortex/certs/client/tls.key"),
+    verify="/run/cortex/certs/server/ca.crt",
+)
+logger.info(f"prom connect status check OK?: {prom.check_prometheus_connection()}")
 LOOP_TIME_SECOND = 60.0  # unit: second, type: float
 ROLLING_TRAINING_SIZE = 1440
 
-ES_ENDPOINT = os.getenv("ES_ENDPOINT", "https://localhost:9200")
-ES_USERNAME = os.getenv("ES_USERNAME", "admin")
-ES_PASSWORD = os.getenv("ES_PASSWORD", "admin")
-
-ES_INDEX = "opni-metric"
-
-ES_RESERVED_KEYWORDS = {
-    "_id",
-    "_index",
-    "_if_seq_no",
-    "_if_primary_term",
-    "_parent",
-    "_percolate",
-    "_retry_on_conflict",
-    "_routing",
-    "_timestamp",
-    "_type",
-    "_version",
-    "_version_type",
-}
-
-es = AsyncElasticsearch(
-    [ES_ENDPOINT],
-    port=9200,
-    http_auth=(ES_USERNAME, ES_PASSWORD),
-    http_compress=True,
-    verify_certs=False,
-    use_ssl=True,
-    timeout=10,
-    max_retries=5,
-    retry_on_timeout=True,
-)
 
 metrics_list = [
     "cpu_usage",
@@ -86,81 +57,132 @@ COLUMNS_LIST = [
 ]
 
 
-@app.on_event("startup")
-async def startup_event():
-    logger.info("loading history on webserver startup")
-    for metric_name in PROMETHEUS_CUSTOM_QUERIES.keys():
-        MAD_DICT[metric_name] = MetricAnomalyDetector(metric_name)
-        GAUGE_DICT[metric_name] = Gauge(metric_name, metric_name, ["value_type"])
-        await load_history_data(metric_name, MAD_DICT[metric_name])
+def push_metrics(json_payload):
 
-
-@app.get("/")
-@app.get("/metrics")
-async def get_metrics():
-    metrics_payloads = []
-    for metric_name, query in PROMETHEUS_CUSTOM_QUERIES.items():
-        current_data = prom.custom_query(query=query)
-        prediction = MAD_DICT[metric_name].run(current_data)
-        if prediction:
-            metrics_payloads.append(prediction)
-            for column in COLUMNS_LIST:
-                if prediction[column] is not None:
-                    GAUGE_DICT[metric_name].labels(value_type=column).set(
-                        prediction[column]
-                    )
-                else:
-                    logging.info(f"no data for {column} in {metric_name} prediction")
-        else:
-            logging.warning(f"no prediction data for {metric_name}")
-    # send data to ES
-    try:
-        async for ok, result in async_streaming_bulk(
-            es, doc_generator(metrics_payloads)
-        ):
-            action, result = result.popitem()
-            if not ok:
-                logging.error("failed to {} document {}".format())
-    except (BulkIndexError, ConnectionTimeout) as exception:
-        logging.error("Failed to index data")
-        logging.error(exception)
-    return Response(
-        content=generate_latest(REGISTRY).decode("utf-8"),
-        media_type="text; charset=utf-8",
+    payload = {
+        "clusterID": json_payload["cluster_id"],
+        "timeseries": [
+            {
+                "labels": [
+                    {
+                        "name": "is_anomaly",
+                        "value": str(json_payload["is_alert"]),
+                    },
+                    {
+                        "name": "is_alert",
+                        "value": str(json_payload["is_alert"]),
+                    },
+                ],
+                "samples": [
+                    {
+                        "value": json_payload["yhat"],
+                        "timestampMs": int(
+                            time.mktime(json_payload["timestamp"].timetuple()) * 1000
+                        ),
+                    }
+                ],
+                "exemplars": [],
+            }
+        ],
+        "metadata": [
+            {
+                "type": "2",
+                "metricFamilyName": "predicted_yhat_" + json_payload["metric_name"],
+                "help": "Predicted yhat value for" + json_payload["metric_name"],
+                "unit": "percentage",
+            }
+        ],
+    }
+    response = requests.post(
+        "http://opni-monitoring.opni-monitoring.svc:11080/CortexAdmin/write_metrics",
+        headers=None,
+        params=None,
+        json=payload,
+    )
+    logger.info(
+        f"push metrics for cluster_id : {json_payload['cluster_id']} at time {json_payload['timestamp']}"
     )
 
 
-async def doc_generator(metrics_payloads):
-    for mp in metrics_payloads:
-        yield {
-            "_index": ES_INDEX,
-            "_id": uuid.uuid4(),
-            "_source": {
-                k: mp[k]
-                for k in mp
-                if not (isinstance(mp[k], str) and not mp[k])
-                and k not in ES_RESERVED_KEYWORDS
-            },
-        }
+async def update_metrics(inference_queue):
+    mad_dict = {}
 
-
-async def load_history_data(metric_name, mad: MetricAnomalyDetector):
-    query = {
-        "query": {"match": {"metric_name": metric_name}},
-        "sort": [{"timestamp": {"order": "desc"}}],
-    }
-    try:
-        history_data = await es.search(
-            index=ES_INDEX, body=query, size=ROLLING_TRAINING_SIZE
-        )
-        mad.load(reversed(history_data["hits"]["hits"]))
-    except Exception as e:
-        logger.warning("fail to load history metrics data!")
+    while True:
+        new_data = await inference_queue.get()
+        cluster_id = new_data["cluster_id"]
+        if cluster_id not in mad_dict:
+            mad_dict[cluster_id] = {}
+            for metric_name in metrics_list:  # init models
+                mad = MetricAnomalyDetector(metric_name, cluster_id)
+                # await load_history_data(metric_name, mad)
+                mad_dict[cluster_id][metric_name] = mad
+        starttime = time.time()
+        metrics_payloads = []
+        for metric_name in metrics_list:
+            if len(new_data[metric_name]) == 0:
+                continue
+            json_payload = mad_dict[cluster_id][metric_name].run(
+                new_data[metric_name]
+            )  # run MAD
+            if json_payload:
+                push_metrics(json_payload)
+                metrics_payloads.append(json_payload)
 
 
 def convert_time(ts):
     return datetime.fromtimestamp(float(ts)).strftime("%Y-%m-%d %H:%M:%S")
 
 
+async def scrape_prometheus_metrics(inference_queue):
+    starttime = time.time()
+    wait_time = (
+        int(starttime) // LOOP_TIME_SECOND * LOOP_TIME_SECOND
+        + LOOP_TIME_SECOND
+        - starttime
+    )
+    await asyncio.sleep(wait_time)  # wait to the start of next minute
+    starttime = time.time()
+    logger.info(f"wait time : {wait_time}, current time : {convert_time(starttime)}")
+    while True:
+        thistime = time.time()
+        active_clusters = list_clusters()
+        for cluster_id in active_clusters:
+            # metrics to collect.
+            cpu_usage = prom.custom_query(
+                query=PROMETHEUS_CUSTOM_QUERIES["cpu_usage"],
+                cluster_id=cluster_id,
+            )
+            memory_usage = prom.custom_query(
+                query=PROMETHEUS_CUSTOM_QUERIES["memory_usage"],
+                cluster_id=cluster_id,
+            )
+            disk_usage = prom.custom_query(
+                query=PROMETHEUS_CUSTOM_QUERIES["disk_usage"],
+                cluster_id=cluster_id,
+            )
+            inference_queue_payload = {
+                "cluster_id": cluster_id,
+                "cpu_usage": cpu_usage,
+                "memory_usage": memory_usage,
+                "disk_usage": disk_usage,
+            }
+            logger.info(inference_queue_payload)
+            await inference_queue.put(inference_queue_payload)
+        await asyncio.sleep(  # to make sure it scrapes every LOOP_TIME seconds.
+            LOOP_TIME_SECOND - ((time.time() - starttime) % LOOP_TIME_SECOND)
+        )
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, port=8000, host="0.0.0.0")
+    loop = asyncio.get_event_loop()
+    inference_queue = asyncio.Queue(loop=loop)
+    prometheus_scraper_coroutine = scrape_prometheus_metrics(inference_queue)
+    update_metrics_coroutine = update_metrics(inference_queue)
+
+    loop.run_until_complete(
+        asyncio.gather(prometheus_scraper_coroutine, update_metrics_coroutine)
+    )
+    try:
+        loop.run_forever()
+    finally:
+        loop.close()

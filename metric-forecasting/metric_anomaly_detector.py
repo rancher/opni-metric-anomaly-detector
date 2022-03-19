@@ -22,28 +22,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(messa
 logger = logging.getLogger(__file__)
 logger.setLevel(LOGGING_LEVEL)
 
-ES_ENDPOINT = os.getenv("ES_ENDPOINT", "https://localhost:9200")
-ES_USERNAME = os.getenv("ES_USERNAME", "admin")
-ES_PASSWORD = os.getenv("ES_PASSWORD", "admin")
-
-ES_RESERVED_KEYWORDS = {
-    "_id",
-    "_index",
-    "_if_seq_no",
-    "_if_primary_term",
-    "_parent",
-    "_percolate",
-    "_retry_on_conflict",
-    "_routing",
-    "_timestamp",
-    "_type",
-    "_version",
-    "_version_type",
-}
-
 
 class MetricAnomalyDetector:
-    def __init__(self, metric_name):
+    def __init__(self, metric_name, cluster_id):
+        self.cluster_id = cluster_id
         self.metric_name = metric_name
         self.metric_xs = []
         self.metric_y = []
@@ -82,7 +64,8 @@ class MetricAnomalyDetector:
         is_alert = 0
         alert_len = None
         json_payload = {
-            "timestamp": xs_new.isoformat(),
+            "cluster_id": self.cluster_id,
+            "timestamp": xs_new,  # xs_new.isoformat(),
             "is_anomaly": is_anomaly,
             "metric_name": self.metric_name,
             "alert_score": 0,

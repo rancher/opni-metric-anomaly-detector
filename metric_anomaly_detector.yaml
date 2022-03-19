@@ -14,21 +14,36 @@ spec:
     spec:
       containers:
       - name: opni-metrics-service
-        image: tybalex/opni-metrics-service:dev
+        image: tybalex/opni-metrics-service:dev22
         imagePullPolicy: Always
         env:
         - name: PROMETHEUS_ENDPOINT
-          value: "http://rancher-monitoring-prometheus.cattle-monitoring-system.svc:9090"
+          value: "https://cortex-query-frontend:8080/"
         - name: NATS_SERVER_URL
           value: nats://cluster-nats-client.opni.svc:4222
         - name: NKEY_SEED_FILENAME
           value: /etc/nkey/seed
-        - name: ES_ENDPOINT
-          value: http://opni-es-client.opni.svc:9200
-        - name: ES_USERNAME
-          value: admin
-        - name: ES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: opni-es-password
+        volumeMounts:
+            - name: cortex-client-certs
+              mountPath: /run/cortex/certs/client
+            - name: cortex-server-cacert
+              mountPath: /run/cortex/certs/server
+      volumes:
+        - name: cortex-client-certs
+          secret:
+            secretName: cortex-client-cert-keys
+            defaultMode: 256
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+              - key: ca.crt
+                path: ca.crt
+        - name: cortex-server-cacert
+          secret:
+            secretName: cortex-serving-cert-keys
+            defaultMode: 256
+            items:
+              - key: ca.crt
+                path: ca.crt
