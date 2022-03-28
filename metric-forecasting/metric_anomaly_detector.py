@@ -15,7 +15,9 @@ ROLLING_TRAINING_SIZE = 1440
 MIN_TRAINING_SIZE = 30
 ALERT_SCORE_THRESHOLD = 5
 CPD_TRACE_BACK_TIME = 30  ## minutes
-LOOP_TIME_SECOND = 60.0  # unit: second, type: float
+LOOP_TIME_SECOND = float(
+    os.getenv("LOOP_TIME_SECOND", 60.0)
+)  # 60.0   # unit: second, type: float
 
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(message)s")
@@ -71,9 +73,9 @@ class MetricAnomalyDetector:
             "alert_score": 0,
             "is_alert": is_alert,
             "y": y_new,
-            "yhat": None,
-            "yhat_lower": None,
-            "yhat_upper": None,
+            "yhat": y_new,
+            "yhat_lower": y_new,
+            "yhat_upper": y_new,
             "confidence_score": 0,
             "alert_id": self.anomaly_start_time,
             "alert_len": alert_len,
@@ -100,7 +102,7 @@ class MetricAnomalyDetector:
                         self.anomaly_start_time = None
                         self.alert_score_counter = 0
             if self.anomaly_start_time:
-                alert_len = f"{int((xs_raw - self.anomaly_start_time) // 60)} minutes"
+                alert_len = f"{int((xs_raw - self.anomaly_start_time) // LOOP_TIME_SECOND)} minutes"
 
             if self.alert_score_counter >= ALERT_SCORE_THRESHOLD:
                 is_alert = 1
@@ -110,9 +112,12 @@ class MetricAnomalyDetector:
                     f"Alert for {self.metric_name} at time : {xs_new.isoformat()}"
                 )
 
-            json_payload["yhat"] = y_pred
-            json_payload["yhat_lower"] = max(0, y_pred_low)
-            json_payload["yhat_upper"] = y_pred_high
+            if y_pred:
+                json_payload["yhat"] = y_pred
+            if y_pred_low:
+                json_payload["yhat_lower"] = min(max(0, y_pred_low), 100)
+            if y_pred_high:
+                json_payload["yhat_upper"] = min(max(y_pred_high, 0), 100)
             json_payload["confidence_score"] = 1  ##TODO
             json_payload["is_anomaly"] = is_anomaly
             json_payload["is_alert"] = is_alert
@@ -170,7 +175,7 @@ class MetricAnomalyDetector:
             if self.alert_score_counter > 0:
                 self.alert_score_counter -= 2
                 if self.alert_score_counter <= 0:
-                    alert_len = (xs_raw - self.anomaly_start_time) // 60
+                    alert_len = (xs_raw - self.anomaly_start_time) // LOOP_TIME_SECOND
                     self.anomaly_start_time = None
                     self.alert_score_counter = 0
 
@@ -215,8 +220,8 @@ class MetricAnomalyDetector:
             training_dataseries = training_dataseries[self.start_index :]
 
             eval_interval = 10  # every 10 mins
-            if len(training_dataseries) % eval_interval == 0:
-                self.metric_model.evaluate(training_dataseries)
+            # if len(training_dataseries) % eval_interval == 0:
+            #     self.metric_model.evaluate(training_dataseries)
             self.metric_model.train(training_dataseries)
             preds, lower_bounds, upper_bounds = self.metric_model.predict()
             for p in zip(preds, lower_bounds, upper_bounds):

@@ -3,13 +3,16 @@ import asyncio
 import logging
 import os
 import time
+import uuid
 from datetime import datetime
 
 # Third Party
-import requests
+from elasticsearch import AsyncElasticsearch
+from elasticsearch.exceptions import ConnectionTimeout
+from elasticsearch.helpers import BulkIndexError, async_streaming_bulk
 from fastapi import FastAPI
 from metric_anomaly_detector import MetricAnomalyDetector
-from prometheusConnector import PrometheusConnect, list_clusters
+from prometheusConnector import PrometheusConnect, list_clusters, push_metrics
 
 app = FastAPI()
 
@@ -27,9 +30,43 @@ prom = PrometheusConnect(
     verify="/run/cortex/certs/server/ca.crt",
 )
 logger.info(f"prom connect status check OK?: {prom.check_prometheus_connection()}")
-LOOP_TIME_SECOND = 60.0  # unit: second, type: float
+LOOP_TIME_SECOND = float(
+    os.getenv("LOOP_TIME_SECOND", 60.0)
+)  # 60.0  # unit: second, type: float
 ROLLING_TRAINING_SIZE = 1440
 
+ES_ENDPOINT = os.getenv("ES_ENDPOINT", None)
+if ES_ENDPOINT:
+    ES_USERNAME = os.getenv("ES_USERNAME", "admin")
+    ES_PASSWORD = os.getenv("ES_PASSWORD", "admin")
+    ES_INDEX = "opni-metric"
+
+    ES_RESERVED_KEYWORDS = {
+        "_id",
+        "_index",
+        "_if_seq_no",
+        "_if_primary_term",
+        "_parent",
+        "_percolate",
+        "_retry_on_conflict",
+        "_routing",
+        "_timestamp",
+        "_type",
+        "_version",
+        "_version_type",
+    }
+
+    es = AsyncElasticsearch(
+        [ES_ENDPOINT],
+        port=9200,
+        http_auth=(ES_USERNAME, ES_PASSWORD),
+        http_compress=True,
+        verify_certs=False,
+        use_ssl=False,
+        timeout=10,
+        max_retries=5,
+        retry_on_timeout=True,
+    )
 
 metrics_list = [
     "cpu_usage",
@@ -37,12 +74,13 @@ metrics_list = [
     "disk_usage",
 ]  ## TODO: default metrics and their queries should be configured in a file.
 
+
 GAUGE_DICT = dict()
 MAD_DICT = dict()
 PROMETHEUS_CUSTOM_QUERIES = {
-    "cpu_usage": '100 * (1- (avg(irate(node_cpu_seconds_total{mode="idle"}[5m]))))',
-    "memory_usage": "100 * (1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes))",
-    "disk_usage": '(sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"})- sum(node_filesystem_free_bytes{device!~"rootfs|HarddiskVolume.+"})) / sum(node_filesystem_size_bytes{device!~"rootfs|HarddiskVolume.+"}) * 100 ',
+    "cpu_usage": 'sum (rate (container_cpu_usage_seconds_total{id="/"}[5m])) / sum (machine_cpu_cores) * 100',
+    "memory_usage": 'sum (container_memory_working_set_bytes{id="/"}) / sum (machine_memory_bytes) * 100',
+    "disk_usage": 'sum (container_fs_usage_bytes{id="/"}) / sum (container_fs_limit_bytes{id="/"}) * 100',
 }
 COLUMNS_LIST = [
     "is_anomaly",
@@ -55,53 +93,6 @@ COLUMNS_LIST = [
     "yhat_lower",
     "yhat_upper",
 ]
-
-
-def push_metrics(json_payload):
-
-    payload = {
-        "clusterID": json_payload["cluster_id"],
-        "timeseries": [
-            {
-                "labels": [
-                    {
-                        "name": "is_anomaly",
-                        "value": str(json_payload["is_alert"]),
-                    },
-                    {
-                        "name": "is_alert",
-                        "value": str(json_payload["is_alert"]),
-                    },
-                ],
-                "samples": [
-                    {
-                        "value": json_payload["yhat"],
-                        "timestampMs": int(
-                            time.mktime(json_payload["timestamp"].timetuple()) * 1000
-                        ),
-                    }
-                ],
-                "exemplars": [],
-            }
-        ],
-        "metadata": [
-            {
-                "type": "2",
-                "metricFamilyName": "predicted_yhat_" + json_payload["metric_name"],
-                "help": "Predicted yhat value for" + json_payload["metric_name"],
-                "unit": "percentage",
-            }
-        ],
-    }
-    response = requests.post(
-        "http://opni-monitoring.opni-monitoring.svc:11080/CortexAdmin/write_metrics",
-        headers=None,
-        params=None,
-        json=payload,
-    )
-    logger.info(
-        f"push metrics for cluster_id : {json_payload['cluster_id']} at time {json_payload['timestamp']}"
-    )
 
 
 async def update_metrics(inference_queue):
@@ -127,6 +118,33 @@ async def update_metrics(inference_queue):
             if json_payload:
                 push_metrics(json_payload)
                 metrics_payloads.append(json_payload)
+
+        if ES_ENDPOINT:
+            try:
+                async for ok, result in async_streaming_bulk(
+                    es, doc_generator(metrics_payloads)
+                ):
+                    action, result = result.popitem()
+                    if not ok:
+                        logging.error("failed to {} document {}".format())
+                logger.info("pushed to ES.")
+            except (BulkIndexError, ConnectionTimeout) as exception:
+                logging.error("Failed to index data")
+                logging.error(exception)
+
+
+async def doc_generator(metrics_payloads):
+    for mp in metrics_payloads:
+        yield {
+            "_index": ES_INDEX,
+            "_id": uuid.uuid4(),
+            "_source": {
+                k: mp[k]
+                for k in mp
+                if not (isinstance(mp[k], str) and not mp[k])
+                and k not in ES_RESERVED_KEYWORDS
+            },
+        }
 
 
 def convert_time(ts):

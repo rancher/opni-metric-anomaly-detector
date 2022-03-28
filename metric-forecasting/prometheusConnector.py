@@ -1,6 +1,7 @@
 # Standard Library
 import logging
 import os
+import time
 from urllib.parse import urlparse
 
 # Third Party
@@ -21,6 +22,70 @@ RETRY_BACKOFF_FACTOR = 1
 # retry only on these status
 RETRY_ON_STATUS = [408, 429, 500, 502, 503, 504]
 
+OPNI_GATEWAY_MANAGEMENT_ENDPOINT = (
+    "http://opni-monitoring-internal.opni-monitoring.svc:11080"
+)
+
+
+def push_metrics(json_payload):
+
+    for m in ["y", "yhat", "yhat_lower", "yhat_upper"]:
+        payload = {
+            "clusterID": json_payload["cluster_id"],
+            "timeseries": [
+                {
+                    "labels": [
+                        {
+                            "name": "__name__",
+                            "value": "new_" + m + "_" + json_payload["metric_name"],
+                        },
+                        # {
+                        #     "name": "is_anomaly",
+                        #     "value": str(json_payload["is_anomaly"]),
+                        # },
+                        # {
+                        #     "name": "is_alert",
+                        #     "value": str(json_payload["is_alert"]),
+                        # },
+                    ],
+                    "samples": [
+                        {
+                            "value": json_payload[m],
+                            "timestampMs": int(
+                                time.mktime(json_payload["timestamp"].timetuple())
+                                * 1000
+                            ),
+                        }
+                    ],
+                    "exemplars": [],
+                }
+            ],
+            "metadata": [
+                {
+                    "type": "2",
+                    "metricFamilyName": "new_" + m + "_" + json_payload["metric_name"],
+                    "help": "Predicted "
+                    + m
+                    + " value for"
+                    + json_payload["metric_name"],
+                    "unit": "percentage",
+                }
+            ],
+        }
+        response = requests.post(
+            OPNI_GATEWAY_MANAGEMENT_ENDPOINT + "/CortexAdmin/write_metrics",
+            headers=None,
+            params=None,
+            json=payload,
+        )
+    logger.info(f"status : {response.status_code}")
+    logger.info(
+        f"push metrics for cluster_id : {json_payload['cluster_id']} at time {json_payload['timestamp']}, metric: {json_payload['metric_name']}"
+    )
+    logger.info(
+        f"y: {json_payload['y']}, yhat_lower: {json_payload['yhat_lower']}, yhat_upper: {json_payload['yhat_upper']}"
+    )
+
 
 def list_clusters():
     """
@@ -30,11 +95,14 @@ def list_clusters():
     :returns: (bool) True if the endpoint can be reached, False if cannot be reached.
     """
     response = requests.get(
-        "http://opni-monitoring.opni-monitoring.svc:11080/management/clusters",
+        OPNI_GATEWAY_MANAGEMENT_ENDPOINT + "/management/clusters",
         headers=None,
         params=None,
     )
-    return [r["id"] for r in response.json()["items"]]
+    if response.ok:
+        return [r["id"] for r in response.json()["items"]]
+    else:
+        return []
 
 
 class PrometheusConnect:
