@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: opni-metrics-service
+  namespace: opni-monitoring
 spec:
   replicas: 1
   selector:
@@ -19,6 +20,12 @@ spec:
         env:
         - name: PROMETHEUS_ENDPOINT
           value: "https://cortex-query-frontend:8080/"
+        - name: ES_ENDPOINT
+          value: "https://ot-os-os-client.default.svc:9200/"
+        - name: ES_USERNAME
+          value: "admin"
+        - name: ES_PASSWORD
+          value: "admin"
         - name: NATS_SERVER_URL
           value: nats://cluster-nats-client.opni.svc:4222
         - name: NKEY_SEED_FILENAME
