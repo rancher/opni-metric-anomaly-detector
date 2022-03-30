@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(messa
 logger = logging.getLogger(__file__)
 logger.setLevel(LOGGING_LEVEL)
 
+N_TEST = 10
 RETRAINING_INTERVAL_MINUTE = 1
 confidence_interval_level = 3  ## should be 2(95%) or 3(99.7%) or 2.57(99%)
 
@@ -42,7 +43,7 @@ def measure_rmse(actual, predicted):
 
 def walk_forward_evaluation(data_series, config):
     order, seasonal_order = config
-    n_test = 10
+    n_test = N_TEST
     predictions = []
     training, testing = train_test_split(data_series, n_test)
     history = [x for x in training]
