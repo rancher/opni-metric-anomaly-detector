@@ -22,10 +22,7 @@ RETRY_BACKOFF_FACTOR = 1
 # retry only on these status
 RETRY_ON_STATUS = [408, 429, 500, 502, 503, 504]
 
-OPNI_GATEWAY_MANAGEMENT_ENDPOINT = (
-    "http://opni-monitoring-internal.opni-monitoring.svc:11080"
-)
-
+OPNI_GATEWAY_MANAGEMENT_ENDPOINT = os.getenv("OPNI_GATEWAY_MANAGEMENT_API", "http://opni-monitoring-internal:11080")
 
 def push_metrics(json_payload):
 
